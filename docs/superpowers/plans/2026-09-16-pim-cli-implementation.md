@@ -743,7 +743,7 @@ git commit -m "feat: add Criterion classes for search (US7)"
 
 **Interfaces:**
 - Consumes: `PIR`, `PIR_REGISTRY` (Task 2/3), `Criterion`, `FieldCriterion` (Task 4), `ValidationError`, `PIRNotFoundError` (Task 1).
-- Produces: `PIRRepository()` with `.add(pir_type: str, **fields) -> PIR`, `.get(id: int) -> PIR`, `.get_all() -> list[PIR]`, `.update(id: int, **fields) -> PIR`, `.delete(id: int) -> None`, `.search(criterion: Criterion) -> list[PIR]`, `.next_id -> int` (property), `.load_snapshot(pirs: Iterable[PIR], next_id: int) -> None`. Task 7 (storage) and Task 8 (commands) call these exact names.
+- Produces: `PIRRepository()` with `.add(pir_type: str, **fields) -> PIR`, `.get(id: int) -> PIR`, `.get_all() -> list[PIR]`, `.update(pir_id: int, **fields) -> PIR` (parameter named `pir_id`, not `id` — `id` must stay free for `**fields` to carry, since `_PROTECTED_FIELDS` rejects an `id=` edit attempt), `.delete(id: int) -> None`, `.search(criterion: Criterion) -> list[PIR]`, `.next_id -> int` (property), `.load_snapshot(pirs: Iterable[PIR], next_id: int) -> None`. Task 7 (storage) and Task 8 (commands) call these exact names — both call `update` positionally (`repository.update(pir_id_value, **fields)`), so the parameter's name doesn't affect them.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -897,8 +897,8 @@ class PIRRepository:
     def get_all(self) -> list[PIR]:
         return list(self._pirs.values())
 
-    def update(self, id: int, **fields) -> PIR:
-        pir = self.get(id)
+    def update(self, pir_id: int, **fields) -> PIR:
+        pir = self.get(pir_id)
         for field_name in fields:
             if field_name in _PROTECTED_FIELDS:
                 raise ValidationError(f"'{field_name}' cannot be edited")
