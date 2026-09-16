@@ -27,23 +27,34 @@ to place all model code in a package named `model`.
 ```
 pim/
   model/
-    pir.py        # PIR (abstract base), Note, Task, Event, Contact, PIR_REGISTRY
-    criteria.py    # Criterion tree used by search (see §4)
-    repository.py  # PIRRepository: in-memory store, CRUD, search
-    storage.py     # PimFileStorage: save/load .pim files (JSON)
-    errors.py      # ValidationError, PIRNotFoundError, ParseError, StorageError
+    pir.py            # PIR (abstract base), Note, Task, Event, Contact, PIR_REGISTRY
+    criteria.py        # Criterion tree used by search (see §4)
+    criteria_parser.py # tokenizer + recursive-descent parser building Criterion trees
+    repository.py      # PIRRepository: in-memory store, CRUD, search
+    storage.py         # PimFileStorage: save/load .pim files (JSON)
+    errors.py          # ValidationError, PIRNotFoundError, ParseError, StorageError
   controller/
-    parser.py      # command-line tokenizer + criterion-grammar parser
-    commands.py     # dispatch table: command name -> handler
+    cli_parser.py      # splits a raw REPL line into a command name + shlex-quoted args
+    commands.py         # dispatch table: command name -> handler
   view/
-    presenter.py   # formats PIRs/messages for console output
-  main.py           # wires model+controller+view, runs the REPL
+    presenter.py       # formats PIRs/messages for console output
+  main.py               # wires model+controller+view, runs the REPL
 ```
 
 `storage.py` lives in `model`, not a separate layer: it only operates on
 model objects and has no CLI/presentation concerns, and keeping it there
 means save/load round-trips are covered by the unit-test deliverable, which
 is scoped to the model package only.
+
+**Correction (2026-09-16, found while mapping files for the implementation
+plan):** the criterion-grammar parser (tokenizer + recursive descent) moved
+from `controller/parser.py` into `model/criteria_parser.py`. §8 requires
+unit-testing the parser's boolean-expression handling, but the assignment
+only requires (and grades) unit tests for the `model` package — leaving the
+parser in `controller` would put its correctness outside graded test scope.
+The remaining controller-side file is renamed `cli_parser.py`, since it now
+only splits a raw command line into a command name plus shlex-quoted
+arguments — not the criterion grammar.
 
 **Modularity (coupling direction):** `model` has zero imports from
 `controller` or `view` — it depends only on the Python standard library.
@@ -60,11 +71,12 @@ The design document's mandatory sequence diagram covers "a user searches
 for and updates some records." Traced through this architecture as two
 sequential REPL commands:
 
-1. User types a `search` command -> `controller/parser.py` tokenizes it and
-   builds a `Criterion` tree (§4) -> Controller calls
-   `repository.search(criterion)` -> Model returns matching `PIR` objects ->
-   Controller hands them to the View's `presenter` -> View prints a
-   numbered/ID list.
+1. User types a `search` command -> `controller/cli_parser.py` splits the
+   line into the command name and the raw criterion text ->
+   `model/criteria_parser.py` tokenizes that text and builds a `Criterion`
+   tree (§4) -> Controller calls `repository.search(criterion)` -> Model
+   returns matching `PIR` objects -> Controller hands them to the View's
+   `presenter` -> View prints a numbered/ID list.
 2. User reads an `id` from that output and types an `edit <id> field=value ...`
    command -> Controller calls `repository.get(id)` (raises
    `PIRNotFoundError`, caught and shown as a friendly message, if the id is
@@ -226,7 +238,7 @@ Unit tests target `model` only, per the assignment:
 - `repository.py`: CRUD + search correctness, including a criterion field
   that doesn't exist on the PIR being tested evaluating to `False` rather
   than raising (§4).
-- `criteria.py` + parser: round-trip on nested/parenthesized boolean
+- `criteria.py` + `criteria_parser.py`: round-trip on nested/parenthesized boolean
   expressions; malformed input raises `ParseError`; a quoted text value
   containing operator characters (e.g. `"cats && dogs"`) parses as literal
   text, not as nested boolean syntax (§4).

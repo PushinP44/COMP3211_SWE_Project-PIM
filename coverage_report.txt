@@ -1,0 +1,30 @@
+Name                           Stmts   Miss  Cover   Missing
+------------------------------------------------------------
+pim/model/__init__.py              0      0   100%
+pim/model/criteria.py             48      3    94%   37, 41, 48
+pim/model/criteria_parser.py      92      6    93%   65, 101, 107, 114, 123, 127
+pim/model/errors.py                5      0   100%
+pim/model/pir.py                 140      0   100%
+pim/model/repository.py           56      1    98%   46
+pim/model/storage.py              40      2    95%   32-33
+------------------------------------------------------------
+TOTAL                            381     12    97%
+
+---
+
+## Coverage Gaps and Justifications
+
+### pim/model/criteria.py (94%)
+- **Line 37, 41, 48**: Defensive branches for type mismatches (non-string field with 'contains' operator, non-datetime field with comparison operators, unknown operator). These defensive checks are architecturally sound but not exercised by the existing test suite since the parser ensures only valid operator-field combinations are created.
+
+### pim/model/criteria_parser.py (93%)
+- **Lines 65, 101, 107, 114, 123, 127**: Defensive error paths for malformed input (trailing tokens, EOF conditions, missing parentheses/operators/values). The test suite covers the major parse error cases (unclosed paren, invalid datetime, incomplete comparison, unexpected character) but not all edge cases in the recursive descent parser's error handling.
+
+### pim/model/pir.py (100%)
+- No gaps. Every production line, including `Event.to_dict`, `Event._from_dict`, and `Event.field_value` — previously entirely untested — is now exercised: `EventTests` covers a full datetime round trip (`start_time` and `alarm` through `to_dict`/`from_dict`), `field_value` for every Event field plus the unknown-field `KeyError` path, and validation of blank `description` and non-datetime `start_time`/`alarm`. `ContactTests` and `TaskTests` now likewise cover `field_value` for every field and the unknown-field `KeyError` path. All four PIR types have model-level `field_value` coverage for their full field set, closing the gap where 5 of the 9 canonical searchable fields had no such test.
+
+### pim/model/repository.py (98%)
+- **Line 46**: Defensive check for non-existent fields during update. The test suite only updates valid fields; an update to a truly non-existent field (e.g., "nonexistent_field") is not tested.
+
+### pim/model/storage.py (95%)
+- **Lines 32-33**: OSError exception handler during save() (e.g., permission denied, disk full). These are OS-level errors that are difficult to trigger portably in a test environment. All other storage.load error paths are now covered, including the corrupt-`next_id` type-validation branch and the widened exception handling for malformed datetimes (ValueError) and semantically-invalid records (ValidationError) reconstructed from a corrupt .pim file.
