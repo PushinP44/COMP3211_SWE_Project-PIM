@@ -37,12 +37,8 @@ class PIRRepository:
     def get_all(self) -> list[PIR]:
         return list(self._pirs.values())
 
-    def update(self, *args, **fields) -> PIR:
-        if not args:
-            raise ValueError("id is required")
-        id = args[0]
-
-        pir = self.get(id)
+    def update(self, pir_id: int, **fields) -> PIR:
+        pir = self.get(pir_id)
         for field_name in fields:
             if field_name in _PROTECTED_FIELDS:
                 raise ValidationError(f"'{field_name}' cannot be edited")
