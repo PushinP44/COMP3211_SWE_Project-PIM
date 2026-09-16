@@ -83,6 +83,24 @@ class SaveLoadCommandTests(unittest.TestCase):
             self.assertIn("Loaded", result)
             self.assertIn("persisted note", run_command(fresh, "print all"))
 
+    def test_loading_corrupt_next_id_then_adding_does_not_crash(self):
+        # Regression test for the crash where a corrupt .pim file with a
+        # non-integer next_id loaded "successfully", then the next `add`
+        # raised an uncaught TypeError (str + int) inside the repository,
+        # killing the REPL. run_command must never raise; it must return a
+        # friendly "Error: ..." string instead.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "corrupt.pim")
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write('{"next_id": "lots", "pirs": []}')
+
+            repo = PIRRepository()
+            load_result = run_command(repo, f'load "{path}"')
+            self.assertTrue(load_result.startswith("Error:"))
+
+            add_result = run_command(repo, 'add note "x"')
+            self.assertTrue(add_result.startswith("Added"))
+
 
 class MiscCommandTests(unittest.TestCase):
     def test_unknown_command_returns_friendly_error(self):

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pim.controller.cli_parser import split_args, split_command
 from pim.model.criteria_parser import parse_criterion
-from pim.model.errors import ParseError, PIRNotFoundError, StorageError, ValidationError
+from pim.model.errors import PimError, ValidationError
 from pim.model.repository import PIRRepository
 from pim.model.storage import load as storage_load
 from pim.model.storage import save as storage_save
@@ -157,5 +157,5 @@ def run_command(repository: PIRRepository, line: str) -> str:
         return format_error(ValidationError(f"Unknown command '{command}'. Type 'help' for a list."))
     try:
         return handler(repository, remainder)
-    except (ValidationError, PIRNotFoundError, ParseError, StorageError, ValueError) as exc:
+    except (PimError, ValueError, TypeError) as exc:
         return format_error(exc)

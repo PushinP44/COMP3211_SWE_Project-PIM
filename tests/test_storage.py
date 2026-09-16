@@ -68,6 +68,42 @@ class SaveLoadRoundTripTests(unittest.TestCase):
         with self.assertRaises(StorageError):
             load(PIRRepository(), self._path("does_not_exist.pim"))
 
+    def test_non_integer_next_id_raises_storage_error(self):
+        path = self._path("bad_next_id.pim")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write('{"next_id": "lots", "pirs": []}')
+        with self.assertRaises(StorageError):
+            load(PIRRepository(), path)
+
+    def test_boolean_next_id_raises_storage_error(self):
+        path = self._path("bool_next_id.pim")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write('{"next_id": true, "pirs": []}')
+        with self.assertRaises(StorageError):
+            load(PIRRepository(), path)
+
+    def test_malformed_datetime_in_pir_raises_storage_error(self):
+        path = self._path("bad_datetime.pim")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(
+                '{"next_id": 1, "pirs": [{"type": "Task", "id": 1, '
+                '"created_at": "2026-01-01T00:00:00", "modified_at": "2026-01-01T00:00:00", '
+                '"description": "x", "deadline": "not-a-date"}]}'
+            )
+        with self.assertRaises(StorageError):
+            load(PIRRepository(), path)
+
+    def test_semantically_invalid_pir_raises_storage_error(self):
+        path = self._path("blank_note.pim")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(
+                '{"next_id": 1, "pirs": [{"type": "Note", "id": 1, '
+                '"created_at": "2026-01-01T00:00:00", "modified_at": "2026-01-01T00:00:00", '
+                '"text": "   "}]}'
+            )
+        with self.assertRaises(StorageError):
+            load(PIRRepository(), path)
+
 
 if __name__ == "__main__":
     unittest.main()
