@@ -1,0 +1,31 @@
+Name                           Stmts   Miss  Cover   Missing
+------------------------------------------------------------
+pim/model/__init__.py              0      0   100%
+pim/model/criteria.py             48      3    94%   37, 41, 48
+pim/model/criteria_parser.py      92      6    93%   65, 101, 107, 114, 123, 127
+pim/model/errors.py                5      0   100%
+pim/model/pir.py                 140     20    86%   127-129, 156, 162, 165, 194, 196, 198, 203-209, 212-218, 222
+pim/model/repository.py           56      1    98%   46
+pim/model/storage.py              38      4    89%   32-33, 50-51
+------------------------------------------------------------
+TOTAL                            379     34    91%
+
+---
+
+## Coverage Gaps and Justifications
+
+### pim/model/criteria.py (94%)
+- **Line 37, 41, 48**: Defensive branches for type mismatches (non-string field with 'contains' operator, non-datetime field with comparison operators, unknown operator). These defensive checks are architecturally sound but not exercised by the existing test suite since the parser ensures only valid operator-field combinations are created.
+
+### pim/model/criteria_parser.py (93%)
+- **Lines 65, 101, 107, 114, 123, 127**: Defensive error paths for malformed input (trailing tokens, EOF conditions, missing parentheses/operators/values). The test suite covers the major parse error cases (unclosed paren, invalid datetime, incomplete comparison, unexpected character) but not all edge cases in the recursive descent parser's error handling.
+
+### pim/model/pir.py (86%)
+- **Lines 127-129, 156, 162, 165, 194, 196, 198, 203-209, 212-218, 222**: Type validation branches and defensive KeyError raises in field_value() methods. The tests exercise the happy path (valid PIRs) and cover serialization/deserialization round-trips, but do not explicitly test individual type validation lines or field_value() KeyError paths for missing fields. These are defensive branches that fail gracefully when invalid data is provided.
+
+### pim/model/repository.py (98%)
+- **Line 46**: Defensive check for non-existent fields during update. The test suite only updates valid fields; an update to a truly non-existent field (e.g., "nonexistent_field") is not tested.
+
+### pim/model/storage.py (89%)
+- **Lines 32-33**: OSError exception handler during save() (e.g., permission denied, disk full). These are OS-level errors that are difficult to trigger portably in a test environment.
+- **Lines 50-51**: KeyError/TypeError handler for malformed .pim file structure (missing 'next_id' or 'pirs' keys). The test suite validates corrupt JSON detection but not missing fields in otherwise valid JSON.
