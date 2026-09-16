@@ -1,7 +1,8 @@
 import unittest
+from datetime import datetime, timedelta
 
 from pim.model.errors import ValidationError
-from pim.model.pir import Contact, Note, PIR_REGISTRY
+from pim.model.pir import Contact, Event, Note, PIR_REGISTRY, Task
 
 
 class NoteTests(unittest.TestCase):
@@ -48,10 +49,46 @@ class ContactTests(unittest.TestCase):
         self.assertEqual(restored.mobile_number, contact.mobile_number)
 
 
+class TaskTests(unittest.TestCase):
+    def test_valid_task_stores_fields(self):
+        deadline = datetime(2026, 12, 1, 10, 0)
+        task = Task(id=1, description="finish report", deadline=deadline)
+        self.assertEqual(task.description, "finish report")
+        self.assertEqual(task.deadline, deadline)
+
+    def test_non_datetime_deadline_raises_validation_error(self):
+        with self.assertRaises(ValidationError):
+            Task(id=1, description="finish report", deadline="not a date")
+
+    def test_round_trips_datetime_through_to_dict_and_from_dict(self):
+        deadline = datetime(2026, 12, 1, 10, 0)
+        task = Task(id=1, description="finish report", deadline=deadline)
+        restored = Task.from_dict(task.to_dict())
+        self.assertEqual(restored.deadline, deadline)
+
+
+class EventTests(unittest.TestCase):
+    def test_alarm_before_start_time_is_valid(self):
+        start = datetime(2026, 12, 1, 10, 0)
+        alarm = start - timedelta(minutes=10)
+        event = Event(id=1, description="meeting", start_time=start, alarm=alarm)
+        self.assertEqual(event.alarm, alarm)
+
+    def test_alarm_equal_to_start_time_is_valid(self):
+        start = datetime(2026, 12, 1, 10, 0)
+        event = Event(id=1, description="meeting", start_time=start, alarm=start)
+        self.assertEqual(event.alarm, start)
+
+    def test_alarm_after_start_time_raises_validation_error(self):
+        start = datetime(2026, 12, 1, 10, 0)
+        alarm = start + timedelta(minutes=5)
+        with self.assertRaises(ValidationError):
+            Event(id=1, description="meeting", start_time=start, alarm=alarm)
+
+
 class RegistryTests(unittest.TestCase):
-    def test_note_and_contact_are_registered(self):
-        self.assertIs(PIR_REGISTRY["Note"], Note)
-        self.assertIs(PIR_REGISTRY["Contact"], Contact)
+    def test_all_four_pir_types_are_registered(self):
+        self.assertEqual(set(PIR_REGISTRY.keys()), {"Note", "Task", "Event", "Contact"})
 
 
 if __name__ == "__main__":

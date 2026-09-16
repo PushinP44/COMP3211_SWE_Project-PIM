@@ -141,3 +141,87 @@ class Contact(PIR):
             mobile_number=data["mobile_number"],
             **cls._base_kwargs(data),
         )
+
+
+@register_pir("Task")
+class Task(PIR):
+    def __init__(self, id: int, description: str, deadline: datetime, **kwargs) -> None:
+        super().__init__(id, **kwargs)
+        self.description = description
+        self.deadline = deadline
+        self.validate()
+
+    def validate(self) -> None:
+        if not isinstance(self.description, str) or not self.description.strip():
+            raise ValidationError("Task.description must be a non-empty string")
+        if not isinstance(self.deadline, datetime):
+            raise ValidationError("Task.deadline must be a datetime")
+
+    def field_value(self, field: str):
+        if field == "description":
+            return self.description
+        if field == "deadline":
+            return self.deadline
+        raise KeyError(field)
+
+    def to_dict(self) -> dict:
+        data = self._base_dict()
+        data.update(description=self.description, deadline=self.deadline.isoformat())
+        return data
+
+    @classmethod
+    def _from_dict(cls, data: dict) -> "Task":
+        return cls(
+            description=data["description"],
+            deadline=datetime.fromisoformat(data["deadline"]),
+            **cls._base_kwargs(data),
+        )
+
+
+@register_pir("Event")
+class Event(PIR):
+    def __init__(
+        self, id: int, description: str, start_time: datetime, alarm: datetime, **kwargs
+    ) -> None:
+        super().__init__(id, **kwargs)
+        self.description = description
+        self.start_time = start_time
+        self.alarm = alarm
+        self.validate()
+
+    def validate(self) -> None:
+        if not isinstance(self.description, str) or not self.description.strip():
+            raise ValidationError("Event.description must be a non-empty string")
+        if not isinstance(self.start_time, datetime):
+            raise ValidationError("Event.start_time must be a datetime")
+        if not isinstance(self.alarm, datetime):
+            raise ValidationError("Event.alarm must be a datetime")
+        if self.alarm > self.start_time:
+            raise ValidationError("Event.alarm must be at or before start_time")
+
+    def field_value(self, field: str):
+        if field == "description":
+            return self.description
+        if field == "start_time":
+            return self.start_time
+        if field == "alarm":
+            return self.alarm
+        raise KeyError(field)
+
+    def to_dict(self) -> dict:
+        data = self._base_dict()
+        data.update(
+            description=self.description,
+            start_time=self.start_time.isoformat(),
+            alarm=self.alarm.isoformat(),
+        )
+        return data
+
+    @classmethod
+    def _from_dict(cls, data: dict) -> "Event":
+        return cls(
+            description=data["description"],
+            start_time=datetime.fromisoformat(data["start_time"]),
+            alarm=datetime.fromisoformat(data["alarm"]),
+            **cls._base_kwargs(data),
+        )
