@@ -354,7 +354,7 @@ class Contact(PIR):
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m unittest tests.test_pir -v`
-Expected: 7 tests, OK
+Expected: 9 tests, OK
 
 - [ ] **Step 5: Commit**
 
@@ -522,7 +522,7 @@ class Event(PIR):
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m unittest tests.test_pir -v`
-Expected: 14 tests, OK
+Expected: 15 tests, OK
 
 - [ ] **Step 5: Commit**
 
@@ -934,7 +934,7 @@ class PIRRepository:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m unittest tests.test_repository -v`
-Expected: 11 tests, OK
+Expected: 12 tests, OK
 
 - [ ] **Step 5: Commit**
 
@@ -1192,7 +1192,7 @@ def parse_criterion(text: str) -> Criterion:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m unittest tests.test_criteria_parser -v`
-Expected: 10 tests, OK
+Expected: 11 tests, OK
 
 - [ ] **Step 5: Commit**
 
