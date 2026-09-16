@@ -1692,18 +1692,18 @@ def handle_search(repository: PIRRepository, remainder: str) -> str:
 
 
 def handle_save(repository: PIRRepository, remainder: str) -> str:
-    filename = remainder.strip()
-    if not filename:
+    args = split_args(remainder)
+    if not args:
         raise ValidationError("Usage: save <filename>")
-    path = storage_save(repository, filename)
+    path = storage_save(repository, args[0])
     return f"Saved to {path}"
 
 
 def handle_load(repository: PIRRepository, remainder: str) -> str:
-    filename = remainder.strip()
-    if not filename:
+    args = split_args(remainder)
+    if not args:
         raise ValidationError("Usage: load <filename>")
-    path = storage_load(repository, filename)
+    path = storage_load(repository, args[0])
     return f"Loaded from {path}"
 
 
